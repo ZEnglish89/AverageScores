@@ -99,6 +99,32 @@ selSort:
 # Note: you MUST NOT use iterative approach in this function.
 calcSum:
 	# Your implementation of calcSum here
+	addi $sp, $sp, -8 #push stack to save the original return address and the original length.
 	
+	sw $ra, 4($sp) #save the original return address.
+	sw $a1, 0($sp) #save the original length.
+	
+	beq $a1, $zero, Empty #if the length of the list is now zero, just return 0 and move on.
+	#This needs to be modified to handle <= 0 rather than just == 0.
+	
+	addi $a1, $a1, -1 #reduce the length by 1 for the next pass.
+	jal calcSum #call the next recursion down, now that $a1 has been reduced.
+	#$v0 now contains the sum of all the elements aside from the rightmost one.
+	
+	lw $a1, 0($sp) #recover the original length.
+	addi $t0, $zero, 4
+	mul $t1, $a1, $t0 #$t1 = length*4; the length of the array represented in bytes rather than words.
+	#THIS MAY GO OUT OF BOUNDS! If it does, try $a1-1 instead, because of the length/index desync.
+	
+	lw $t2, $t1($a0)#$t2 will now hopefully contain the rightmost element of the array, the only one that's missing from $v0.
+	
+	add $v0, $v0, $t2 #add that final element, and we are hopefully ready to return.
+	j EndSum
+	
+Empty:	addi $v0, $zero, 0
+	j EndSum
+	
+EndSum:	lw $ra, 4($sp) #recover the original return address.
+	addi $sp, $sp, 8 #pop the stack.
 	jr $ra
 	
