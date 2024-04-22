@@ -9,6 +9,8 @@ str2: .asciiz "Original scores: "
 str3: .asciiz "Sorted scores (in descending order): "
 str4: .asciiz "Enter the number of (lowest) scores to drop: "
 str5: .asciiz "Average (rounded down) with dropped scores removed: "
+newline: .asciiz "\n"
+blank: .asciiz " "
 
 
 .text 
@@ -67,8 +69,12 @@ loop_in:
 	syscall
 	move $a1, $v0
 	sub $a1, $s0, $a1	# numScores - drop
-	move $a0, $s2
+	move $a0, $s1 #this should be $s2, if it says $s1 then it's been changed for a test and needs to be changed back before the code is run for real.
 	jal calcSum	# Call calcSum to RECURSIVELY compute the sum of scores that are not dropped
+	
+	move $a0, $v0
+	li $v0, 1
+	syscall #this is just printing out the result of calcSum, changing it to print the average will come later.
 	
 	# Your code here to compute average and print it
 	
@@ -82,7 +88,22 @@ loop_in:
 # It prints all the elements in one line with a newline at the end.
 printArray:
 	# Your implementation of printList here	
-
+	addi $t0, $zero, 0
+	move $t1, $a1
+	move $t2, $a0
+PrintLoop: beq $t0, $t1, EndPrint
+	lw $a0, 0($t2)
+	li $v0, 1
+	syscall
+	la $a0, blank
+	li $v0, 4
+	syscall
+	addi $t2, $t2, 4
+	addi $t0, $t0, 1
+	j PrintLoop
+EndPrint: la $a0, newline
+	li $v0, 4
+	syscall
 	jr $ra
 	
 	
@@ -113,12 +134,15 @@ calcSum:
 	
 	lw $a1, 0($sp) #recover the original length.
 	addi $t0, $zero, 4
-	mul $t1, $a1, $t0 #$t1 = length*4; the length of the array represented in bytes rather than words.
-	#THIS MAY GO OUT OF BOUNDS! If it does, try $a1-1 instead, because of the length/index desync.
+	addi $t1, $a1, -1 #$t1 now contains length-1
+	mul $t2, $t1, $t0 #t2 now contains the index of sorted[length-1]
 	
-	lw $t2, $t1($a0)#$t2 will now hopefully contain the rightmost element of the array, the only one that's missing from $v0.
+	add $t2, $t2, $a0 #t2 now contains the address of sorted[length-1]
 	
-	add $v0, $v0, $t2 #add that final element, and we are hopefully ready to return.
+	lw $t3 0($t2) #$t3 now contains the value of sorted[length-1]
+	
+	add $v0, $v0, $t3 #Add that last element to $v0, which was all that was missing. We are now ready to clean up and return.
+	
 	j EndSum
 	
 Empty:	addi $v0, $zero, 0
