@@ -69,12 +69,22 @@ loop_in:
 	syscall
 	move $a1, $v0
 	sub $a1, $s0, $a1	# numScores - drop
-	move $a0, $s1 #this should be $s2, if it says $s1 then it's been changed for a test and needs to be changed back before the code is run for real.
+	move $a0, $s2 #this should be $s2, if it says $s1 then it's been changed for a test and needs to be changed back before the code is run for real.
 	jal calcSum	# Call calcSum to RECURSIVELY compute the sum of scores that are not dropped
 	
-	move $a0, $v0
+	addi $sp, $sp, -4
+	sw $v0 0($sp)
+	
+	la $a0, str5
+	li $v0, 4
+	syscall
+	lw $v0, 0($sp)
+	addi $sp, $sp, 4
+	
+	div $v0, $a1
+	mflo $a0
 	li $v0, 1
-	syscall #this is just printing out the result of calcSum, changing it to print the average will come later.
+	syscall
 	
 	# Your code here to compute average and print it
 	
@@ -111,8 +121,95 @@ EndPrint: la $a0, newline
 # It performs SELECTION sort in descending order and populates the sorted array
 selSort:
 	# Your implementation of selSort here
+	li $t0, 0
+	addi $t1, $s0, 0
+	add $t2, $zero, $s1 #$t2 is a pointer to the original list.
+	add $t3, $zero, $s2 #$t3 is a pointer to the sorted list.
 	
-	jr $ra
+CopyLoop: beq $t0, $t1, Copied
+	lw $t4, 0($t2)
+	sw $t4, 0($t3) #now sorted[i] = original[i]
+	addi $t2, $t2, 4
+	addi $t3, $t3, 4
+	addi $t0, $t0, 1
+	j CopyLoop #increment everything and go again.
+	
+Copied: #this is for once we've copied the list.
+	li $t0, 0 #i
+	addi $t1, $s0, -1 #len-1
+	add $t2, $zero, $s2 # pointer to sorted list.
+OuterLoop: beq $t0, $t1, EndSort #while i<len-1
+
+	move $t3, $t0 #maxindex starts at i	
+	
+	addi $sp, $sp, -12 #push the stack
+	
+	sw $t0, 0($sp)
+
+	addi $t0, $t0, 1 #i becomes j
+
+	sw $t1, 4($sp)
+
+	addi $t1, $t1, 1 #len-1 becomes len
+	
+InnerLoop: beq $t0, $t1, BreakInnerLoop
+	
+	li $t4, 4
+	mul $t4, $t0, $t4
+	add $t4, $t2, $t4
+	lw $t4, 0($t4) #$t4 is equal to sorted[j]
+	
+	li $t5, 4
+	mul $t5, $t5, $t3
+	add $t5, $t5, $t2
+	lw $t5, 0($t5) #$t5 is now equal to sorted[maxindex]
+	
+	slt $t6, $t4, $t5
+	bne $t6, $zero, Else
+	
+	move $t3, $t0 #maxindex=j
+	
+Else: 	addi $t0, $t0, 1
+	j InnerLoop
+BreakInnerLoop:
+	li $t5, 4
+	mul $t5, $t5, $t3
+	add $t5, $t5, $t2
+	lw $t5, 0($t5) #$t5 is now equal to sorted[maxindex]
+	sw $t5, 8($sp) #save sorted[maxindex] on the stack.
+	
+	li $t5, 4
+	lw $t0, 0($sp)
+	mul $t0, $t0, $t5
+	add $t0, $t0, $t2
+	lw $t0, 0($t0) #$t0 = sorted[i]
+	
+	li $t5, 4
+	mul $t5, $t5, $t3
+	add $t5, $t5, $t2 #$t5 is equal to the address of sorted[maxindex]
+	sw $t0, 0($t5) #sorted[i] is saved in the location of sorted[maxindex]
+	
+	li $t5, 4
+	lw $t0, 0($sp)
+	mul $t0, $t0, $t5
+	add $t0, $t0, $t2 #$t0 is equal to the address of sorted[i]
+	
+	lw $t5, 8($sp) #retrieve sorted[maxindex]
+	sw $t5, 0($t0) #sorted[maxindex] is saved in the location of sorted[i]
+	
+	lw $t0, 0($sp)
+	addi $t0, $t0, 1
+	
+	lw $t1, 4($sp)
+	
+	addi $sp, $sp, 12
+	
+	j OuterLoop
+	
+	
+	
+	
+EndSort: jr $ra
 	
 	
 # calcSum takes in an array and its size as arguments.
