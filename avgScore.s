@@ -144,11 +144,11 @@ OuterLoop: beq $t0, $t1, EndSort #while i<len-1
 	
 	addi $sp, $sp, -12 #push the stack
 	
-	sw $t0, 0($sp)
+	sw $t0, 0($sp) #save i on the stack
 
 	addi $t0, $t0, 1 #i becomes j
 
-	sw $t1, 4($sp)
+	sw $t1, 4($sp) #save len-1 on the stack
 
 	addi $t1, $t1, 1 #len-1 becomes len
 	
@@ -174,37 +174,31 @@ Else: 	addi $t0, $t0, 1
 BreakInnerLoop:
 	li $t5, 4
 	mul $t5, $t5, $t3
-	add $t5, $t5, $t2
-	lw $t5, 0($t5) #$t5 is now equal to sorted[maxindex]
-	sw $t5, 8($sp) #save sorted[maxindex] on the stack.
+	add $t5, $t5, $t2 #$t5 is now equal to the address of sorted[maxindex]
+	lw $t6, 0($t5) #$t6 is now equal to sorted[maxindex]
+	sw $t6, 8($sp) #save sorted[maxindex] on the stack.
 	
-	li $t5, 4
+	li $t6, 4 #I need $t5 to stay because it's holding the address, but I can overwrite $t6 because I saved the value to the stack.
 	lw $t0, 0($sp)
-	mul $t0, $t0, $t5
-	add $t0, $t0, $t2
-	lw $t0, 0($t0) #$t0 = sorted[i]
+	mul $t0, $t0, $t6
+	add $t0, $t0, $t2 #$t0 is now equal to the address of sorted[i]
+	lw $t1, 0($t0) #$t1 = sorted[i]
 	
-	li $t5, 4
-	mul $t5, $t5, $t3
-	add $t5, $t5, $t2 #$t5 is equal to the address of sorted[maxindex]
-	sw $t0, 0($t5) #sorted[i] is saved in the location of sorted[maxindex]
+
+	sw $t1, 0($t5) #sorted[i] is saved in the location of sorted[maxindex]
 	
-	li $t5, 4
-	lw $t0, 0($sp)
-	mul $t0, $t0, $t5
-	add $t0, $t0, $t2 #$t0 is equal to the address of sorted[i]
 	
 	lw $t5, 8($sp) #retrieve sorted[maxindex]
 	sw $t5, 0($t0) #sorted[maxindex] is saved in the location of sorted[i]
 	
 	lw $t0, 0($sp)
-	addi $t0, $t0, 1
+	addi $t0, $t0, 1 #retrieve i from the stack and increment it.
 	
-	lw $t1, 4($sp)
+	lw $t1, 4($sp) #retrieve len-1 from the stack.
 	
-	addi $sp, $sp, 12
+	addi $sp, $sp, 12 #pop the stack.
 	
-	j OuterLoop
+	j OuterLoop #loop!
 	
 	
 	
